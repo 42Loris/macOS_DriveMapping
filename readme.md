@@ -57,7 +57,8 @@ munkiimport build/DriveMapping-1.0.pkg
 │       └── Scripts/
 │           └── DriveMapping/
 │               ├── map_drives.sh             ← main script (do not edit)
-│               └── config.conf               ← edit this
+│               ├── config.conf               ← edit this
+│               └── uninstall.sh              ← removes all installed files
 └── scripts/
     ├── preinstall                            ← unloads existing agent on upgrade
     └── postinstall                           ← loads agent after install
@@ -105,23 +106,11 @@ The package produced by `munkipkg` is **unsigned**. This is fine for Munki deplo
 
 > **Warning:** If your organisation uses endpoint security tooling (e.g. CrowdStrike, Jamf Protect) with a policy that explicitly blocks unsigned packages, installs will fail regardless of the Munki workflow.
 
-If you need to sign and notarize the package (e.g. for direct distribution or to satisfy a strict security policy):
+If you need to sign the package (e.g. for direct distribution or to satisfy a strict security policy), use a *Developer ID Installer* certificate (requires an Apple Developer account):
 
-1. **Sign** with a *Developer ID Installer* certificate (requires an Apple Developer account):
-   ```bash
-   productsign --sign "Developer ID Installer: Your Name (TEAMID)" \
-     build/DriveMapping-1.0.pkg build/DriveMapping-1.0-signed.pkg
-   ```
+```bash
+productsign --sign "Developer ID Installer: Your Name (TEAMID)" \
+  build/DriveMapping-1.0.pkg build/DriveMapping-1.0-signed.pkg
+```
 
-2. **Notarize:**
-   ```bash
-   xcrun notarytool submit build/DriveMapping-1.0-signed.pkg \
-     --apple-id you@example.com --team-id TEAMID --wait
-   ```
-
-3. **Staple the notarization ticket:**
-   ```bash
-   xcrun stapler staple build/DriveMapping-1.0-signed.pkg
-   ```
-
-Use `DriveMapping-1.0-signed.pkg` for distribution after these steps.
+Use `DriveMapping-1.0-signed.pkg` for distribution after signing.
