@@ -28,7 +28,11 @@ source "$CONFIG"
 # Drive mounting
 # ---------------------------------------------------------------------------
 mount_drive() {
-    local url="$1" mountpoint="$2" label="$3"
+    local url="$1"
+    local label mountpoint smb_url
+    label="$(basename "$url")"
+    mountpoint="/Volumes/$label"
+    smb_url="${url#smb:}"
 
     if mount | grep -q "on $mountpoint "; then
         log "Already mounted: $label ($mountpoint)"
@@ -36,9 +40,6 @@ mount_drive() {
     fi
 
     mkdir -p "$mountpoint"
-
-    # mount_smbfs expects //server/share, not smb://server/share
-    local smb_url="${url#smb:}"
 
     if mount_smbfs "$smb_url" "$mountpoint" 2>/dev/null; then
         log "Mounted: $label -> $url"
@@ -52,8 +53,8 @@ mount_drive() {
 # ---------------------------------------------------------------------------
 log "--- Drive mapping check ---"
 
-for i in "${!DRIVE_URLS[@]}"; do
-    mount_drive "${DRIVE_URLS[$i]}" "${DRIVE_MOUNTPOINTS[$i]}" "${DRIVE_LABELS[$i]}"
+for url in "${DRIVE_URLS[@]}"; do
+    mount_drive "$url"
 done
 
 log "--- Done ---"
