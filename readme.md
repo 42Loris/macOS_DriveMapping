@@ -6,13 +6,30 @@ Automatic network drive mapping for macOS managed devices. On every login and ne
 
 - macOS with Platform SSO + Kerberos SSO Extension configured via MDM
 - [munkipkg](https://github.com/munki/munki-pkg) to build the package
+- [Munki](https://github.com/munki/munki) for deployment
 
-## Workflow
+## Building the package
 
+**Install munkipkg** (once):
+```bash
+brew install munki-pkg
+```
+
+**Build:**
 1. Clone this repo
-2. Edit `payload/Library/Scripts/DriveMapping/config.conf`
-3. Run `munkipkg .` to build the pkg
-4. Import the pkg into Munki
+2. Edit `payload/Library/Scripts/DriveMapping/config.conf` with your SMB URLs
+3. Bump `version` in `build-info.plist` if this is an upgrade
+4. Run from the repo root:
+```bash
+munkipkg .
+```
+
+The pkg is written to the `build/` folder as `DriveMapping-1.0.pkg`.
+
+**Import into Munki:**
+```bash
+munkiimport build/DriveMapping-1.0.pkg
+```
 
 ## config.conf
 
