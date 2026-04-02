@@ -2,11 +2,13 @@
 
 Automatic network drive mapping for macOS managed devices — equivalent to a Windows Scheduled Task triggered on login and network connection.
 
+On every login and network change, the script attempts to mount all configured drives. If a server is unreachable the mount is skipped and logged — no network detection or SSID matching needed.
+
 ## File overview
 
 | File | Purpose | Edit? |
 |------|---------|-------|
-| `config.json` | Network identifier + drive paths | **Yes** |
+| `config.conf` | Drive paths | **Yes** |
 | `map_drives.sh` | Main mapping logic | No |
 | `com.drivemapping.plist` | LaunchAgent template | No |
 | `install.sh` | One-time setup per device | No |
@@ -14,31 +16,31 @@ Automatic network drive mapping for macOS managed devices — equivalent to a Wi
 
 ## Quick start
 
-1. Edit `config.json` with your SSID/domain and SMB paths.
+1. Edit `config.conf` with your SMB paths.
 2. Run `bash install.sh` once per device (or deploy via MDM).
 3. Test manually: `bash map_drives.sh`
 4. Check log: `tail -f ~/Library/Logs/DriveMapping.log`
 
-## config.json reference
+## config.conf reference
 
-```json
-{
-  "network": {
-    "ssid": "Corporate-WiFi",        // WiFi network name (optional)
-    "domain_suffix": "corp.acme.com",// DNS search domain (optional)
-    "ip_prefix": "10.0."             // IP address prefix (optional)
-  },
-  "drives": [
-    {
-      "url": "smb://server/share",   // SMB/AFP/NFS URL
-      "mountpoint": "/Volumes/Name", // Where to mount
-      "label": "Human-readable name" // Used in logs
-    }
-  ]
-}
+```bash
+# Drives — parallel arrays (keep the same number of elements in each).
+DRIVE_URLS=(
+    "smb://server/share"
+)
+
+DRIVE_MOUNTPOINTS=(
+    "/Volumes/Share"
+)
+
+DRIVE_LABELS=(
+    "Human-readable name"   # Used in logs
+)
 ```
 
-At least one `network` field must match for drives to be mounted. Using `domain_suffix` or `ip_prefix` is recommended for managed devices (works for both wired and wireless).
+## Dependencies
+
+None — pure bash (3.2+, built-in on all macOS versions).
 
 ## How the triggers work
 
@@ -53,20 +55,34 @@ macOS uses `launchd` instead of Windows Scheduled Tasks:
 
 ## MDM deployment options
 
+### Munki (recommended)
+Build a flat pkg containing the files and a `postinstall` script that loads the LaunchAgent:
+
+```
+DriveMapping.pkg
+├── payload/
+│   └── Library/Scripts/DriveMapping/
+│       ├── map_drives.sh
+│       └── config.conf
+└── postinstall     ← launchctl load the plist
+```
+
+Use `pkgbuild` to build:
+```bash
+pkgbuild \
+  --root payload/ \
+  --scripts scripts/ \
+  --identifier com.drivemapping \
+  --version 1.0 \
+  DriveMapping.pkg
+```
+
+### Intune
+Use a single self-contained shell script that writes all files to disk and loads the LaunchAgent. Intune can deploy one script per policy.
+
 ### Jamf Pro
-- Deploy `map_drives.sh` and `config.json` to a fixed path (e.g. `/Library/Scripts/DriveMapping/`) via Policy > Files & Processes or a package.
-- Deploy `com.drivemapping.plist` (pre-filled) to `/Library/LaunchAgents/` — Jamf loads it automatically.
-- Use a Policy with trigger **Login** as a fallback/initial run.
-- For per-user config, use Extension Attributes or Jamf Parameters (`$4`–`$11`) passed into the script.
-
-### Kandji / Mosyle / Addigy
-- Use the built-in **Custom Script** library to run `install.sh` at enrolment.
-- Deploy files via a **Custom App** or **Managed Files** feature.
-
-### Native MDM (Apple MDM protocol)
-- Use a `com.apple.loginitems` Configuration Profile to run the script at login (macOS 13+).
-- Combine with a `com.apple.MCX` profile for SMB mount points (limited, no SSID condition).
+- Deploy files to a fixed path (e.g. `/Library/Scripts/DriveMapping/`) via Policy > Files & Processes or a package.
+- Deploy `com.drivemapping.plist` (pre-filled) to `/Library/LaunchAgents/`.
 
 ### NoMAD / Jamf Connect
-- Best for identity-aware mapping (mount based on AD group membership).
-- Supports Kerberos tickets for seamless SMB auth.
+Best for identity-aware mapping (mount based on AD group membership). Supports Kerberos tickets for seamless SMB auth.

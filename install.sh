@@ -21,7 +21,7 @@ echo ""
 # Validate prerequisites
 [[ -f "$PLIST_TEMPLATE" ]] || { echo "ERROR: com.drivemapping.plist not found"; exit 1; }
 [[ -f "$MAIN_SCRIPT" ]]    || { echo "ERROR: map_drives.sh not found"; exit 1; }
-[[ -f "$SCRIPT_DIR/config.json" ]] || { echo "ERROR: config.json not found"; exit 1; }
+[[ -f "$SCRIPT_DIR/config.conf" ]] || { echo "ERROR: config.conf not found"; exit 1; }
 
 # Make scripts executable
 chmod +x "$MAIN_SCRIPT"
