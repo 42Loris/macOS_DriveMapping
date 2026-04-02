@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Label must match the filename (without .plist) -->
+    <key>Label</key>
+    <string>com.drivemapping</string>
+
+    <!-- Path to the main script — install.sh fills this in -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>SCRIPT_PATH_PLACEHOLDER</string>
+    </array>
+
+    <!-- Run at login (equivalent to Windows "At log on" trigger) -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Re-run whenever network configuration changes
+         (equivalent to Windows "On network connection" trigger).
+         launchd fires when any of these files are modified by the OS. -->
+    <key>WatchPaths</key>
+    <array>
+        <string>/Library/Preferences/SystemConfiguration/NetworkInterfaces.plist</string>
+        <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
+        <string>/var/run/resolv.conf</string>
+    </array>
+
+    <!-- Throttle: wait 10s after a network event before running
+         (avoids firing before IP/DNS is fully resolved) -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <!-- Write stdout/stderr to the same log the script uses -->
+    <key>StandardOutPath</key>
+    <string>LOG_PATH_PLACEHOLDER</string>
+    <key>StandardErrorPath</key>
+    <string>LOG_PATH_PLACEHOLDER</string>
+</dict>
+</plist>
