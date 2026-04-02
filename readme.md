@@ -95,13 +95,7 @@ sudo bash /Library/Scripts/DriveMapping/uninstall.sh
 <string>uninstall_script</string>
 <key>uninstall_script</key>
 <string>#!/bin/bash
-CURRENT_USER=$(stat -f "%Su" /dev/console)
-USER_ID=$(id -u "$CURRENT_USER" 2>/dev/null) || true
-if [[ -n "$CURRENT_USER" && "$CURRENT_USER" != "root" && -n "$USER_ID" ]]; then
-    launchctl bootout "gui/$USER_ID" /Library/LaunchAgents/com.drivemapping.plist 2>/dev/null || true
-fi
-rm -f /Library/LaunchAgents/com.drivemapping.plist
-rm -rf /Library/Scripts/DriveMapping/
+/Library/Scripts/DriveMapping/uninstall.sh
 </string>
 ```
 

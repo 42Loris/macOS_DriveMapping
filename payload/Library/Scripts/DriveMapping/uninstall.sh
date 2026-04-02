@@ -10,3 +10,5 @@ fi
 
 rm -f /Library/LaunchAgents/com.drivemapping.plist
 rm -rf /Library/Scripts/DriveMapping/
+
+pkgutil --forget com.drivemapping 2>/dev/null || true
