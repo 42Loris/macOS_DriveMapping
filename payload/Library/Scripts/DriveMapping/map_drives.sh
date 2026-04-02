@@ -29,22 +29,31 @@ source "$CONFIG"
 # ---------------------------------------------------------------------------
 mount_drive() {
     local url="$1"
-    local label mountpoint smb_url
+    local label mountpoint smb_url host
     label="$(basename "$url")"
     mountpoint="/Volumes/$label"
     smb_url="${url#smb:}"
+    host="$(echo "$url" | sed 's|smb://||;s|/.*||')"
 
     if mount | grep -q "on $mountpoint "; then
         log "Already mounted: $label ($mountpoint)"
         return 0
     fi
 
-    mkdir -p "$mountpoint"
+    if ! ping -c1 -t2 "$host" &>/dev/null; then
+        log "SKIPPED: $label — server unreachable ($host), not on the correct network"
+        return 0
+    fi
+
+    if ! mkdir -p "$mountpoint" 2>/dev/null; then
+        log "ERROR: Cannot create mountpoint $mountpoint — permission denied"
+        return 1
+    fi
 
     if mount_smbfs "$smb_url" "$mountpoint" 2>/dev/null; then
         log "Mounted: $label -> $url"
     else
-        log "WARNING: Could not mount $label ($url) — server may be unreachable"
+        log "WARNING: Could not mount $label ($url) — server reachable but mount failed"
     fi
 }
 
