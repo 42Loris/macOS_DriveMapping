@@ -3,6 +3,7 @@
 # Reads config from config.json (same directory).
 # Triggered by launchd on login and network changes.
 # DO NOT EDIT — configure via config.json.
+# Requires: plutil (built-in on macOS 10.2+), no external dependencies.
 
 set -euo pipefail
 
@@ -22,20 +23,10 @@ die() {
 [[ -f "$CONFIG" ]] || die "config.json not found at $CONFIG"
 
 # ---------------------------------------------------------------------------
-# Parse config.json with python3 (built-in on macOS)
+# Parse config.json with plutil (built-in on macOS, no external dependencies)
 # ---------------------------------------------------------------------------
 read_config() {
-    python3 -c "
-import json, sys
-with open('$CONFIG') as f:
-    c = json.load(f)
-key = sys.argv[1]
-parts = key.split('.')
-val = c
-for p in parts:
-    val = val.get(p, '')
-print(val if not isinstance(val, list) else json.dumps(val))
-" "$1"
+    plutil -extract "$1" raw -o - "$CONFIG" 2>/dev/null || echo ""
 }
 
 # ---------------------------------------------------------------------------
@@ -116,23 +107,24 @@ unmount_drive() {
 # ---------------------------------------------------------------------------
 log "--- Drive mapping check ---"
 
-DRIVES="$(read_config drives)"
-DRIVE_COUNT=$(python3 -c "import json; d=json.loads('$DRIVES'); print(len(d))")
-
 if is_on_corporate_network; then
     log "Corporate network detected — mounting drives"
-    for i in $(seq 0 $((DRIVE_COUNT - 1))); do
-        url=$(python3      -c "import json; d=json.loads('$DRIVES'); print(d[$i]['url'])")
-        mountpoint=$(python3 -c "import json; d=json.loads('$DRIVES'); print(d[$i]['mountpoint'])")
-        label=$(python3    -c "import json; d=json.loads('$DRIVES'); print(d[$i]['label'])")
+    i=0
+    while plutil -extract "drives.$i.url" raw -o - "$CONFIG" &>/dev/null; do
+        url=$(plutil -extract "drives.$i.url" raw -o - "$CONFIG")
+        mountpoint=$(plutil -extract "drives.$i.mountpoint" raw -o - "$CONFIG")
+        label=$(plutil -extract "drives.$i.label" raw -o - "$CONFIG")
         mount_drive "$url" "$mountpoint" "$label"
+        i=$((i + 1))
     done
 else
     log "Not on corporate network — skipping (or unmounting)"
-    for i in $(seq 0 $((DRIVE_COUNT - 1))); do
-        mountpoint=$(python3 -c "import json; d=json.loads('$DRIVES'); print(d[$i]['mountpoint'])")
-        label=$(python3      -c "import json; d=json.loads('$DRIVES'); print(d[$i]['label'])")
+    i=0
+    while plutil -extract "drives.$i.url" raw -o - "$CONFIG" &>/dev/null; do
+        mountpoint=$(plutil -extract "drives.$i.mountpoint" raw -o - "$CONFIG")
+        label=$(plutil -extract "drives.$i.label" raw -o - "$CONFIG")
         unmount_drive "$mountpoint" "$label"
+        i=$((i + 1))
     done
 fi
 
