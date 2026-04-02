@@ -8,6 +8,21 @@ Automatic network drive mapping for macOS managed devices. On every login and ne
 - [munkipkg](https://github.com/munki/munki-pkg) to build the package
 - [Munki](https://github.com/munki/munki) for deployment
 
+## Configuration
+
+Before building, edit `payload/Library/Scripts/DriveMapping/config.conf` with your SMB share URLs.
+
+One SMB URL per line:
+
+```bash
+DRIVE_URLS=(
+    "smb://fileserver.corp.example.com/shared"
+    "smb://fileserver.corp.example.com/home"
+)
+```
+
+`smb://server/sharename` → mounts at `/Volumes/sharename`
+
 ## Building the package
 
 **Install munkipkg** (once):
@@ -17,7 +32,7 @@ brew install munki-pkg
 
 **Build:**
 1. Clone this repo
-2. Edit `payload/Library/Scripts/DriveMapping/config.conf` with your SMB URLs
+2. Configure `payload/Library/Scripts/DriveMapping/config.conf` (see above)
 3. Bump `version` in `build-info.plist` if this is an upgrade
 4. Run from the repo root:
 ```bash
@@ -30,19 +45,6 @@ The pkg is written to the `build/` folder as `DriveMapping-1.0.pkg`.
 ```bash
 munkiimport build/DriveMapping-1.0.pkg
 ```
-
-## config.conf
-
-One SMB URL per line. The share name is used automatically as the mountpoint and log label:
-
-```bash
-DRIVE_URLS=(
-    "smb://fileserver.corp.example.com/shared"
-    "smb://fileserver.corp.example.com/home"
-)
-```
-
-`smb://server/sharename` → mounts at `/Volumes/sharename`
 
 ## Project structure
 
@@ -77,3 +79,30 @@ Logs are written to `~/Library/Logs/DriveMapping.log`.
 ## Versioning
 
 Bump `version` in `build-info.plist` before each build. Munki uses this to determine whether to reinstall.
+
+## Package signing
+
+The package produced by `munkipkg` is **unsigned**. This is fine for Munki deployments — Munki installs packages via the `installer` command running as root, which bypasses Gatekeeper. End users will not see any security warning during a managed install.
+
+> **Warning:** If your organisation uses endpoint security tooling (e.g. CrowdStrike, Jamf Protect) with a policy that explicitly blocks unsigned packages, installs will fail regardless of the Munki workflow.
+
+If you need to sign and notarize the package (e.g. for direct distribution or to satisfy a strict security policy):
+
+1. **Sign** with a *Developer ID Installer* certificate (requires an Apple Developer account):
+   ```bash
+   productsign --sign "Developer ID Installer: Your Name (TEAMID)" \
+     build/DriveMapping-1.0.pkg build/DriveMapping-1.0-signed.pkg
+   ```
+
+2. **Notarize:**
+   ```bash
+   xcrun notarytool submit build/DriveMapping-1.0-signed.pkg \
+     --apple-id you@example.com --team-id TEAMID --wait
+   ```
+
+3. **Staple the notarization ticket:**
+   ```bash
+   xcrun stapler staple build/DriveMapping-1.0-signed.pkg
+   ```
+
+Use `DriveMapping-1.0-signed.pkg` for distribution after these steps.
