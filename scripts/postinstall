@@ -1,8 +1,9 @@
 #!/bin/bash
 # Set permissions and load the LaunchAgent for the currently logged-in user.
 
-# Ensure the script is executable
+# Ensure scripts are executable
 chmod +x /Library/Scripts/DriveMapping/map_drives.sh
+chmod +x /Library/Scripts/DriveMapping/uninstall.sh
 
 CURRENT_USER=$(stat -f "%Su" /dev/console)
 USER_ID=$(id -u "$CURRENT_USER" 2>/dev/null) || true

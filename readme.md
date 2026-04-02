@@ -80,6 +80,31 @@ Logs are written to `~/Library/Logs/DriveMapping.log`.
 
 Bump `version` in `build-info.plist` before each build. Munki uses this to determine whether to reinstall.
 
+## Uninstalling
+
+An `uninstall.sh` script is installed on the device at `/Library/Scripts/DriveMapping/uninstall.sh`. It unloads the LaunchAgent and removes all installed files.
+
+**Manually** (run as root on the target device):
+```bash
+sudo bash /Library/Scripts/DriveMapping/uninstall.sh
+```
+
+**Via Munki** — add the following to the pkginfo so Munki runs the script automatically when the item is removed from a manifest:
+```xml
+<key>uninstall_method</key>
+<string>uninstall_script</string>
+<key>uninstall_script</key>
+<string>#!/bin/bash
+CURRENT_USER=$(stat -f "%Su" /dev/console)
+USER_ID=$(id -u "$CURRENT_USER" 2>/dev/null) || true
+if [[ -n "$CURRENT_USER" && "$CURRENT_USER" != "root" && -n "$USER_ID" ]]; then
+    launchctl bootout "gui/$USER_ID" /Library/LaunchAgents/com.drivemapping.plist 2>/dev/null || true
+fi
+rm -f /Library/LaunchAgents/com.drivemapping.plist
+rm -rf /Library/Scripts/DriveMapping/
+</string>
+```
+
 ## Package signing
 
 The package produced by `munkipkg` is **unsigned**. This is fine for Munki deployments — Munki installs packages via the `installer` command running as root, which bypasses Gatekeeper. End users will not see any security warning during a managed install.
