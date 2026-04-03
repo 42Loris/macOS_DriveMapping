@@ -45,7 +45,7 @@ mount_drive() {
         return 0
     fi
 
-    if mount_smbfs "$smb_url" "$mountpoint" 2>/dev/null; then
+    if osascript -e "mount volume \"$url\"" &>/dev/null; then
         log "Mounted: $label -> $url"
     else
         log "WARNING: Could not mount $label ($url) — server reachable but mount failed"
