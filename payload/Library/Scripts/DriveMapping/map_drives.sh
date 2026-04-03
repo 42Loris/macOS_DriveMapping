@@ -45,11 +45,6 @@ mount_drive() {
         return 0
     fi
 
-    if ! mkdir -p "$mountpoint" 2>/dev/null; then
-        log "ERROR: Cannot create mountpoint $mountpoint — permission denied"
-        return 1
-    fi
-
     if mount_smbfs "$smb_url" "$mountpoint" 2>/dev/null; then
         log "Mounted: $label -> $url"
     else
