@@ -13,7 +13,6 @@ If a server is unreachable the mount is skipped and logged — no interaction, n
 - macOS 12+
 - [munkipkg](https://github.com/munki/munki-pkg) to build the package
 - [Munki](https://github.com/munki/munki) for deployment
-- Xcode Command Line Tools to compile the Swift helper (`xcode-select --install`)
 
 ## Configuration
 
@@ -38,15 +37,8 @@ brew install munki-pkg
 **Build:**
 1. Clone this repo
 2. Edit `pkg/payload/Library/Scripts/DriveMapping/config.conf` (see above)
-3. Compile the Swift mount helper (once, or after any source changes):
-```bash
-swiftc src/mount_helper.swift \
-    -framework NetFS \
-    -framework Security \
-    -o pkg/payload/Library/Scripts/DriveMapping/mount_helper
-```
-4. Bump `version` in `pkg/build-info.plist` if this is an upgrade
-5. Build the package:
+3. Bump `version` in `pkg/build-info.plist` if this is an upgrade
+4. Run:
 ```bash
 munkipkg pkg/
 ```
