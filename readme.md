@@ -1,18 +1,23 @@
 # macOS Drive Mapping
 
-Automatic network drive mapping for macOS managed devices. On every login and network change, the script attempts to mount all configured drives silently using the logged-in user's Kerberos credentials (PSSO). If a server is unreachable the mount is skipped and logged — no interaction, no prompts.
+Automatic network drive mapping for macOS managed devices. On every login and network change, the script attempts to mount all configured SMB shares silently. Authentication is handled in order:
+
+1. **Kerberos / Platform SSO** — silent, no credentials stored (AD-bound Macs)
+2. **Keychain** — silent, credentials stored from a previous login
+3. **Prompt** — one-time dialog, credentials saved to Keychain for all future logins
+
+If a server is unreachable the mount is skipped and logged — no interaction, no errors shown to the user.
 
 ## Requirements
 
-- macOS with Platform SSO + Kerberos SSO Extension configured via MDM
+- macOS 12+
 - [munkipkg](https://github.com/munki/munki-pkg) to build the package
 - [Munki](https://github.com/munki/munki) for deployment
+- Xcode Command Line Tools to compile the Swift helper (`xcode-select --install`)
 
 ## Configuration
 
-Before building, edit `payload/Library/Scripts/DriveMapping/config.conf` with your SMB share URLs.
-
-One SMB URL per line:
+Before building, edit `pkg/payload/Library/Scripts/DriveMapping/config.conf` with your SMB share URLs:
 
 ```bash
 DRIVE_URLS=(
@@ -32,37 +37,51 @@ brew install munki-pkg
 
 **Build:**
 1. Clone this repo
-2. Configure `payload/Library/Scripts/DriveMapping/config.conf` (see above)
-3. Bump `version` in `build-info.plist` if this is an upgrade
-4. Run from the repo root:
+2. Edit `pkg/payload/Library/Scripts/DriveMapping/config.conf` (see above)
+3. Compile the Swift mount helper (once, or after any source changes):
 ```bash
-munkipkg .
+swiftc src/mount_helper.swift \
+    -framework NetFS \
+    -framework Security \
+    -o pkg/payload/Library/Scripts/DriveMapping/mount_helper
+```
+4. Bump `version` in `pkg/build-info.plist` if this is an upgrade
+5. Build the package:
+```bash
+munkipkg pkg/
 ```
 
-The pkg is written to the `build/` folder as `DriveMapping-1.0.pkg`.
+The pkg is written to `pkg/build/` as `DriveMapping-<version>.pkg`.
 
 **Import into Munki:**
 ```bash
-munkiimport build/DriveMapping-1.0.pkg
+munkiimport pkg/build/DriveMapping-1.0.pkg
 ```
 
 ## Project structure
 
 ```
-├── build-info.plist                          ← munkipkg config
-├── payload/
-│   └── Library/
-│       ├── LaunchAgents/
-│       │   └── com.drivemapping.plist        ← fires on login + network change
-│       └── Scripts/
-│           └── DriveMapping/
-│               ├── map_drives.sh             ← main script (do not edit)
-│               ├── config.conf               ← edit this
-│               └── uninstall.sh              ← removes all installed files
-└── scripts/
-    ├── preinstall                            ← unloads existing agent on upgrade
-    └── postinstall                           ← loads agent after install
+├── pkg/                                          ← munkipkg project (builds the .pkg)
+│   ├── build-info.plist                          ← version, identifier, munkipkg config
+│   ├── icon.png                                  ← package icon
+│   ├── payload/
+│   │   └── Library/
+│   │       ├── LaunchAgents/
+│   │       │   └── com.drivemapping.plist        ← fires on login + network change
+│   │       └── Scripts/DriveMapping/
+│   │           ├── config.conf                   ← edit this (SMB URLs)
+│   │           ├── map_drives.sh                 ← main script (do not edit)
+│   │           ├── mount_helper                  ← compiled Swift binary (silent auth)
+│   │           └── uninstall.sh                  ← removes all installed files
+│   └── scripts/
+│       ├── preinstall                            ← unloads existing agent on upgrade
+│       └── postinstall                           ← loads agent after install
+├── src/
+│   └── mount_helper.swift                        ← Swift source for mount_helper binary
+└── readme.md
 ```
+
+> `pkg/build/` is gitignored — the built `.pkg` is not committed to the repo.
 
 ## How it works
 
@@ -73,17 +92,17 @@ The LaunchAgent fires on two events:
 
 `ThrottleInterval: 10` adds a 10-second delay after a network event to give the Kerberos SSO Extension time to acquire a ticket before the script runs.
 
-Authentication is fully transparent — `mount_smbfs` picks up the user's Kerberos ticket automatically. No credentials are stored anywhere.
+`map_drives.sh` iterates over the configured URLs, pings each host, and calls `mount_helper` for reachable servers. `mount_helper` tries Kerberos first, then Keychain, then prompts once and saves the credentials — every subsequent mount is fully silent.
 
 Logs are written to `~/Library/Logs/DriveMapping.log`.
 
 ## Versioning
 
-Bump `version` in `build-info.plist` before each build. Munki uses this to determine whether to reinstall.
+Bump `version` in `pkg/build-info.plist` before each build. Munki uses this to determine whether to reinstall.
 
 ## Uninstalling
 
-An `uninstall.sh` script is installed on the device at `/Library/Scripts/DriveMapping/uninstall.sh`. It unloads the LaunchAgent and removes all installed files.
+An `uninstall.sh` script is installed on the device at `/Library/Scripts/DriveMapping/uninstall.sh`.
 
 **Manually** (run as root on the target device):
 ```bash
@@ -102,15 +121,13 @@ sudo bash /Library/Scripts/DriveMapping/uninstall.sh
 
 ## Package signing
 
-The package produced by `munkipkg` is **unsigned**. This is fine for Munki deployments — Munki installs packages via the `installer` command running as root, which bypasses Gatekeeper. End users will not see any security warning during a managed install.
+The package produced by `munkipkg` is **unsigned**. This is fine for Munki deployments — Munki installs packages via the `installer` command running as root, which bypasses Gatekeeper.
 
-> **Warning:** If your organisation uses endpoint security tooling (e.g. CrowdStrike, Jamf Protect) with a policy that explicitly blocks unsigned packages, installs will fail regardless of the Munki workflow.
+> **Note:** If your organisation uses endpoint security tooling (e.g. CrowdStrike, Jamf Protect) that explicitly blocks unsigned packages, installs will fail regardless of the Munki workflow.
 
-If you need to sign the package (e.g. for direct distribution or to satisfy a strict security policy), use a *Developer ID Installer* certificate (requires an Apple Developer account):
+If you need to sign the package, use a *Developer ID Installer* certificate (requires an Apple Developer account):
 
 ```bash
 productsign --sign "Developer ID Installer: Your Name (TEAMID)" \
-  build/DriveMapping-1.0.pkg build/DriveMapping-1.0-signed.pkg
+  pkg/build/DriveMapping-1.0.pkg pkg/build/DriveMapping-1.0-signed.pkg
 ```
-
-Use `DriveMapping-1.0-signed.pkg` for distribution after signing.
