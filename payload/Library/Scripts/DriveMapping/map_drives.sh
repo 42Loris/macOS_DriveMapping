@@ -45,10 +45,18 @@ mount_drive() {
         return 0
     fi
 
-    if osascript -e "mount volume \"$url\"" &>/dev/null; then
-        log "Mounted: $label -> $url"
+    if [[ -x "$SCRIPT_DIR/mount_helper" ]]; then
+        if "$SCRIPT_DIR/mount_helper" "$url" &>/dev/null; then
+            log "Mounted: $label -> $url"
+        else
+            log "WARNING: Could not mount $label ($url) — mount_helper failed"
+        fi
     else
-        log "WARNING: Could not mount $label ($url) — server reachable but mount failed"
+        if osascript -e "mount volume \"$url\"" &>/dev/null; then
+            log "Mounted: $label -> $url"
+        else
+            log "WARNING: Could not mount $label ($url) — server reachable but mount failed"
+        fi
     fi
 }
 
