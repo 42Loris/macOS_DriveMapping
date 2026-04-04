@@ -1,4 +1,4 @@
-.gitignore
 pkg/build/
-
 .DS_Store
+
+build/
