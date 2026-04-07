@@ -45,18 +45,19 @@ mount_drive() {
         return 0
     fi
 
-    if [[ -x "$SCRIPT_DIR/mount_helper" ]]; then
-        if "$SCRIPT_DIR/mount_helper" "$url" &>/dev/null; then
-            log "Mounted: $label -> $url"
-        else
-            log "WARNING: Could not mount $label ($url) — mount_helper failed"
-        fi
+    if open "$url" &>/dev/null; then
+        # Wait briefly for Finder to complete the mount
+        local i
+        for i in 1 2 3 4 5; do
+            if mount | grep -q "on $mountpoint "; then
+                log "Mounted: $label -> $url"
+                return 0
+            fi
+            sleep 1
+        done
+        log "WARNING: open returned success but $label not yet at $mountpoint"
     else
-        if osascript -e "mount volume \"$url\"" &>/dev/null; then
-            log "Mounted: $label -> $url"
-        else
-            log "WARNING: Could not mount $label ($url) — server reachable but mount failed"
-        fi
+        log "WARNING: Could not mount $label ($url) — server reachable but mount failed"
     fi
 }
 

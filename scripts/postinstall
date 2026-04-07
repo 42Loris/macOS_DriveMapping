@@ -4,7 +4,6 @@
 # Ensure scripts are executable
 chmod +x /Library/Scripts/DriveMapping/map_drives.sh
 chmod +x /Library/Scripts/DriveMapping/uninstall.sh
-[[ -f /Library/Scripts/DriveMapping/mount_helper ]] && chmod +x /Library/Scripts/DriveMapping/mount_helper
 
 CURRENT_USER=$(stat -f "%Su" /dev/console)
 USER_ID=$(id -u "$CURRENT_USER" 2>/dev/null) || true
