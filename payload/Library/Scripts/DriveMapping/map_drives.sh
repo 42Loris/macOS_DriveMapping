@@ -5,7 +5,7 @@
 # DO NOT EDIT — configure via config.conf.
 # Requires: bash 3.2+ (built-in on macOS), no external dependencies.
 
-set -euo pipefail
+set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$SCRIPT_DIR/config.conf"
@@ -67,7 +67,7 @@ mount_drive() {
 log "--- Drive mapping check ---"
 
 for url in "${DRIVE_URLS[@]}"; do
-    mount_drive "$url"
+    mount_drive "$url" || true
 done
 
 log "--- Done ---"

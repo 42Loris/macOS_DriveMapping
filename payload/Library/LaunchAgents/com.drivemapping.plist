@@ -17,10 +17,13 @@
 
     <key>WatchPaths</key>
     <array>
+        <string>/private/var/run/resolv.conf</string>
+        <string>/Library/Preferences/SystemConfiguration/com.apple.network.identification.plist</string>
         <string>/Library/Preferences/SystemConfiguration/NetworkInterfaces.plist</string>
-        <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
-        <string>/var/run/resolv.conf</string>
     </array>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.drivemapping.err</string>
 
     <key>ThrottleInterval</key>
     <integer>10</integer>
