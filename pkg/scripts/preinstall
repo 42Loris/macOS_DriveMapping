@@ -1,0 +1,12 @@
+#!/bin/bash
+# Unload existing LaunchAgents before upgrade to avoid conflicts.
+
+CURRENT_USER=$(stat -f "%Su" /dev/console)
+USER_ID=$(id -u "$CURRENT_USER" 2>/dev/null) || true
+
+if [[ -n "$CURRENT_USER" && "$CURRENT_USER" != "root" && -n "$USER_ID" ]]; then
+    launchctl bootout "gui/$USER_ID" /Library/LaunchAgents/com.drivemapping.plist 2>/dev/null || true
+    launchctl bootout "gui/$USER_ID" /Library/LaunchAgents/com.drivemapping.menubar.plist 2>/dev/null || true
+fi
+
+exit 0

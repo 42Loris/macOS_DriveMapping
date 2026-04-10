@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>ExtensionData</key>
+			<dict>
+				<key>allowPasswordChange</key>
+				<true/>
+				<key>allowPlatformSSOAuthFallback</key>
+				<true/>
+				<key>performKerberosOnly</key>
+				<true/>
+				<key>pwReqComplexity</key>
+				<true/>
+				<key>syncLocalPassword</key>
+				<false/>
+				<key>usePlatformSSOTGT</key>
+				<true/>
+
+				<!-- ADJUST: your Entra ID tenant domain or tenant ID (GUID)
+				     Find it: Entra ID portal → Overview → Primary domain / Tenant ID -->
+				<key>preferredKDCs</key>
+				<array>
+					<string>kkdcp://login.microsoftonline.com/YOUR-TENANT-DOMAIN-OR-ID/kerberos</string>
+				</array>
+			</dict>
+
+			<key>ExtensionIdentifier</key>
+			<string>com.apple.AppSSOKerberos.KerberosExtension</string>
+
+			<!-- ADJUST: your SMB file server hostnames/domains.
+			     Use *.corp.contoso.com to cover all servers under a domain.
+			     Keep the windows.net entries — they are required for Cloud Kerberos Trust. -->
+			<key>Hosts</key>
+			<array>
+				<string>YOUR-FILESERVER.corp.example.com</string>
+				<string>*.corp.example.com</string>
+				<string>windows.net</string>
+				<string>*.windows.net</string>
+				<string>KERBEROS.MICROSOFTONLINE.COM</string>
+				<string>MICROSOFTONLINE.COM</string>
+				<string>*.MICROSOFTONLINE.COM</string>
+			</array>
+
+			<key>PayloadDisplayName</key>
+			<string>Single Sign-On Extensions Payload</string>
+
+			<!-- ADJUST: generate with  uuidgen  in Terminal -->
+			<key>PayloadIdentifier</key>
+			<string>com.apple.extensiblesso.YOUR-UUID</string>
+
+			<key>PayloadType</key>
+			<string>com.apple.extensiblesso</string>
+
+			<!-- ADJUST: generate with  uuidgen  in Terminal -->
+			<key>PayloadUUID</key>
+			<string>YOUR-UUID</string>
+
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+
+			<!-- ADJUST: your on-prem AD domain in ALL CAPS (e.g. CORP.CONTOSO.COM)
+			     Find it: run  klist  in Terminal after login on a managed Mac,
+			     or check Entra ID → Hybrid identity → Azure AD Connect. -->
+			<key>Realm</key>
+			<string>YOUR-AD-REALM.EXAMPLE.COM</string>
+
+			<key>TeamIdentifier</key>
+			<string>apple</string>
+			<key>Type</key>
+			<string>Credential</string>
+			<key>URLs</key>
+			<array/>
+		</dict>
+	</array>
+
+	<!-- ADJUST: name shown in your MDM console and System Settings → Profiles -->
+	<key>PayloadDisplayName</key>
+	<string>Kerberos SSO - Cloud Kerberos Trust</string>
+
+	<key>PayloadEnabled</key>
+	<true/>
+
+	<!-- ADJUST: reverse-DNS style, e.g. com.contoso.mdm.kerberos-sso -->
+	<key>PayloadIdentifier</key>
+	<string>com.YOUR-ORG.mdm.kerberos-sso</string>
+
+	<!-- ADJUST: your organization name -->
+	<key>PayloadOrganization</key>
+	<string>YOUR-ORGANIZATION</string>
+
+	<key>PayloadRemovalDisallowed</key>
+	<true/>
+	<key>PayloadScope</key>
+	<string>System</string>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+
+	<!-- ADJUST: generate with  uuidgen  in Terminal -->
+	<key>PayloadUUID</key>
+	<string>YOUR-UUID</string>
+
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>

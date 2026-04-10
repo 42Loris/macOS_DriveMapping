@@ -6,12 +6,11 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="DriveMapping"
-SPM_DIR="$REPO_DIR/MenuBarApp"
+SPM_DIR="$REPO_DIR/src/menubar"
 BINARY="$SPM_DIR/.build/release/$APP_NAME"
-APP_BUNDLE="$REPO_DIR/payload/Applications/$APP_NAME.app"
-DEVELOPER_ID="${2:-}"  # optional: pass --sign "Developer ID Application: ..."
+APP_BUNDLE="$REPO_DIR/pkg/payload/Applications/$APP_NAME.app"
+DEVELOPER_ID=""
 
-# Parse --sign argument
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --sign) DEVELOPER_ID="$2"; shift 2 ;;
@@ -19,7 +18,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "→ Building Swift app..."
+echo "→ Building Swift menu bar app..."
 cd "$SPM_DIR"
 swift build -c release
 
@@ -31,7 +30,6 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 cp "$BINARY"                        "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cp "$SPM_DIR/Resources/Info.plist"  "$APP_BUNDLE/Contents/Info.plist"
 
-# Optional code signing
 if [[ -n "$DEVELOPER_ID" ]]; then
     echo "→ Signing with: $DEVELOPER_ID"
     codesign --force --options runtime --sign "$DEVELOPER_ID" "$APP_BUNDLE"
@@ -40,7 +38,7 @@ else
 fi
 
 echo "→ Building package with munkipkg..."
-cd "$REPO_DIR"
-munkipkg .
+munkipkg "$REPO_DIR/pkg/"
 
-echo "✓ Done — package at build/$(ls build/*.pkg | xargs basename)"
+PKG=$(ls "$REPO_DIR/pkg/build/"*.pkg 2>/dev/null | head -1)
+echo "✓ Done — package at pkg/build/$(basename "$PKG")"

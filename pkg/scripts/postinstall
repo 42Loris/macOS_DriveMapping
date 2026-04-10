@@ -1,0 +1,15 @@
+#!/bin/bash
+# Set permissions and load both LaunchAgents for the currently logged-in user.
+
+chmod +x /Library/Scripts/DriveMapping/map_drives.sh
+chmod +x /Library/Scripts/DriveMapping/uninstall.sh
+
+CURRENT_USER=$(stat -f "%Su" /dev/console)
+USER_ID=$(id -u "$CURRENT_USER" 2>/dev/null) || true
+
+if [[ -n "$CURRENT_USER" && "$CURRENT_USER" != "root" && -n "$USER_ID" ]]; then
+    launchctl bootstrap "gui/$USER_ID" /Library/LaunchAgents/com.drivemapping.plist 2>/dev/null || true
+    launchctl bootstrap "gui/$USER_ID" /Library/LaunchAgents/com.drivemapping.menubar.plist 2>/dev/null || true
+fi
+
+exit 0
