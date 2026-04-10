@@ -1,7 +1,7 @@
 #!/bin/bash
 # build.sh — packages everything with munkipkg.
 # The pre-built DriveMapping.app is committed to the repo at src/DriveMapping.app.
-# To rebuild the app from source: ./build.sh --rebuild-app [--sign "Developer ID Application: ..."]
+# Run with no arguments — the script will prompt for all options interactively.
 
 set -euo pipefail
 
@@ -9,16 +9,22 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="DriveMapping"
 APP_SOURCE="$REPO_DIR/src/$APP_NAME.app"
 APP_BUNDLE="$REPO_DIR/pkg/payload/Applications/$APP_NAME.app"
-REBUILD=false
-DEVELOPER_ID=""
+read -r -p "Rebuild app from Swift source? [y/N] " _rebuild
+[[ "$_rebuild" =~ ^[Yy]$ ]] && REBUILD=true || REBUILD=false
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --rebuild-app) REBUILD=true; shift ;;
-        --sign) DEVELOPER_ID="$2"; shift 2 ;;
-        *) shift ;;
-    esac
-done
+read -r -p "Sign the app? [y/N] " _sign
+if [[ "$_sign" =~ ^[Yy]$ ]]; then
+    read -r -p "Developer ID Application (e.g. 'Developer ID Application: Name (TEAMID)'): " DEVELOPER_ID
+else
+    DEVELOPER_ID=""
+fi
+
+read -r -p "Sign the package? [y/N] " _signpkg
+if [[ "$_signpkg" =~ ^[Yy]$ ]]; then
+    read -r -p "Developer ID Installer (e.g. 'Developer ID Installer: Name (TEAMID)'): " INSTALLER_ID
+else
+    INSTALLER_ID=""
+fi
 
 if [[ "$REBUILD" == true ]]; then
     SPM_DIR="$REPO_DIR/src/menubar"
@@ -34,6 +40,7 @@ if [[ "$REBUILD" == true ]]; then
     mkdir -p "$APP_SOURCE/Contents/Resources"
     cp "$BINARY"                        "$APP_SOURCE/Contents/MacOS/$APP_NAME"
     cp "$SPM_DIR/Resources/Info.plist"  "$APP_SOURCE/Contents/Info.plist"
+    cp "$SPM_DIR/Resources/DriveMapping.icns" "$APP_SOURCE/Contents/Resources/"
 
     if [[ -n "$DEVELOPER_ID" ]]; then
         echo "→ Signing with: $DEVELOPER_ID"
@@ -51,5 +58,16 @@ cp -R "$APP_SOURCE" "$APP_BUNDLE"
 echo "→ Building package with munkipkg..."
 munkipkg "$REPO_DIR/pkg/"
 
+echo "→ Cleaning up payload..."
+rm -rf "$APP_BUNDLE"
+
 PKG=$(ls "$REPO_DIR/pkg/build/"*.pkg 2>/dev/null | head -1)
-echo "✓ Done — package at pkg/build/$(basename "$PKG")"
+
+if [[ -n "$INSTALLER_ID" ]]; then
+    SIGNED_PKG="${PKG%.pkg}-signed.pkg"
+    echo "→ Signing package with: $INSTALLER_ID"
+    productsign --sign "$INSTALLER_ID" "$PKG" "$SIGNED_PKG"
+    echo "✓ Done — signed package at pkg/build/$(basename "$SIGNED_PKG")"
+else
+    echo "✓ Done — package at pkg/build/$(basename "$PKG")"
+fi
