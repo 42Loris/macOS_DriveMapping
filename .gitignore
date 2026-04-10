@@ -1,4 +1,4 @@
 .DS_Store
 pkg/build/
+pkg/payload/Applications/
 src/menubar/.build/
-
