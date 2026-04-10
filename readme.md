@@ -7,7 +7,7 @@ A menu bar app (`DriveMapping.app`) provides a status icon and manual controls.
 ## Requirements
 
 - macOS 13+ with Platform SSO + Kerberos SSO Extension configured via MDM
-- [munkipkg](https://github.com/munki/munki-pkg) to build the package
+- [munkipkg](https://github.com/munki/munki-pkg) — download and place on `$PATH`
 - [Munki](https://github.com/munki/munki) for deployment
 - Xcode command-line tools (`xcode-select --install`) — required to compile the Swift menu bar app
 - An **Apple Developer account** with a *Developer ID Application* certificate (app signing) and a *Developer ID Installer* certificate (package signing)
@@ -53,9 +53,7 @@ DRIVE_URLS=(
 
 ### Prerequisites (once)
 
-```bash
-brew install munki-pkg
-```
+Install munkipkg by downloading it from [github.com/munki/munki-pkg](https://github.com/munki/munki-pkg) and placing the `munkipkg` script somewhere on your `$PATH` (e.g. `/usr/local/bin/`).
 
 ### Build
 
