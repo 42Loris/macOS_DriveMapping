@@ -9,8 +9,8 @@ A menu bar app (`DriveMapping.app`) provides a status icon and manual controls.
 - macOS 13+ with Platform SSO + Kerberos SSO Extension configured via MDM
 - [munkipkg](https://github.com/munki/munki-pkg) to build the package
 - [Munki](https://github.com/munki/munki) for deployment
-- Xcode command-line tools (`xcode-select --install`) to rebuild the Swift app from source
-- An **Apple Developer account** with a *Developer ID Application* certificate (app signing) and a *Developer ID Installer* certificate (package signing) — required for distribution outside the Mac App Store
+- Xcode command-line tools (`xcode-select --install`) — required to compile the Swift menu bar app
+- An **Apple Developer account** with a *Developer ID Application* certificate (app signing) and a *Developer ID Installer* certificate (package signing)
 
 ## Configuration
 
@@ -28,14 +28,12 @@ DRIVE_URLS=(
 ## Project structure
 
 ```
-├── icon.png                                      ← source icon (800×800 PNG)
 ├── build.sh                                      ← main build script
 ├── src/
-│   ├── DriveMapping.app/                         ← pre-built app bundle (committed)
 │   └── menubar/                                  ← Swift source for the menu bar app
 │       └── Resources/
 │           ├── Info.plist
-│           └── DriveMapping.icns
+│           └── DriveMapping.icns                 ← app icon 
 └── pkg/
     ├── build-info.plist                          ← munkipkg config + version
     ├── scripts/
@@ -59,44 +57,33 @@ DRIVE_URLS=(
 brew install munki-pkg
 ```
 
-### Quick build (using the committed app)
+### Build
 
-The repo includes a pre-built `src/DriveMapping.app`. Use this path when you only need to update scripts or configuration — no Xcode required.
+`build.sh` is interactive — run it and answer the prompts:
 
-1. Edit drive URLs in `pkg/payload/Library/Scripts/DriveMapping/map_drives.sh`
-2. Bump `version` in `pkg/build-info.plist` if this is an upgrade
-3. Run:
-
-```bash
+```
 ./build.sh
+
+Rebuild app from Swift source? [y/N]
+Sign the app? [y/N]
+  → Developer ID Application (e.g. 'Developer ID Application: Name (TEAMID)'):
+Sign the package? [y/N]
+  → Developer ID Installer (e.g. 'Developer ID Installer: Name (TEAMID)'):
 ```
 
-The signed package is written to `pkg/build/DriveMapping-<version>.pkg`.
+The script will:
 
-### Full rebuild — app + package (signed)
+1. Optionally compile the Swift source in `src/menubar/` and assemble `DriveMapping.app`
+2. Optionally sign the app with your *Developer ID Application* certificate (hardened runtime)
+3. Copy the app into the munkipkg payload and run `munkipkg`
+4. Clean up all intermediate artifacts (`src/DriveMapping.app`, `pkg/payload/Applications/`)
+5. Optionally sign the resulting package with your *Developer ID Installer* certificate via `productsign`
 
-Use this when you have changed the Swift source in `src/menubar/` or want to produce a fully signed, notarization-ready build.
-
-**Step 1 — rebuild and sign the app:**
-
-```bash
-./build.sh --rebuild-app --sign "Developer ID Application: Your Name (TEAMID)"
-```
-
-This compiles the Swift binary, assembles the `.app` bundle (including icon), and signs it with a hardened runtime. The result is written back to `src/DriveMapping.app` — commit it to keep the repo in sync.
-
-**Step 2 — build and sign the package:**
-
-```bash
-./build.sh   # copies the app into pkg/payload and runs munkipkg
-productsign --sign "Developer ID Installer: Your Name (TEAMID)" \
-  pkg/build/DriveMapping-1.0.pkg \
-  pkg/build/DriveMapping-1.0-signed.pkg
-```
-
-Use `DriveMapping-1.0-signed.pkg` for distribution.
+The final package lands in `pkg/build/`. If you signed it, the output is `DriveMapping-<version>-signed.pkg`.
 
 > **Unsigned packages** are fine for Munki deployments — Munki installs via `installer` as root, which bypasses Gatekeeper. Sign the package only if your endpoint security tooling (e.g. CrowdStrike, Jamf Protect) explicitly blocks unsigned installers.
+
+> **Note:** `src/DriveMapping.app` is intentionally excluded from git (`.gitignore`) so that a personally signed binary is never committed to the repo.
 
 ## How startup / auto-launch works
 
