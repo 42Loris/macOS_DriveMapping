@@ -1,7 +1,8 @@
 #!/bin/bash
 # build.sh — packages everything with munkipkg.
-# The pre-built DriveMapping.app is committed to the repo at src/DriveMapping.app.
 # Run with no arguments — the script will prompt for all options interactively.
+# On a fresh clone you must answer 'y' to the rebuild prompt: src/DriveMapping.app
+# is gitignored and must be produced locally from the Swift sources in src/menubar/.
 
 set -euo pipefail
 
@@ -47,6 +48,12 @@ if [[ "$REBUILD" == true ]]; then
         codesign --force --options runtime --sign "$DEVELOPER_ID" "$APP_SOURCE"
     fi
 
+fi
+
+if [[ ! -d "$APP_SOURCE" ]]; then
+    echo "✗ $APP_SOURCE does not exist." >&2
+    echo "  Re-run build.sh and answer 'y' to 'Rebuild app from Swift source?'" >&2
+    exit 1
 fi
 
 echo "→ Copying .app into payload..."

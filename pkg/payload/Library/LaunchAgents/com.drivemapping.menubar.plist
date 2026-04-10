@@ -16,8 +16,5 @@
 
     <key>KeepAlive</key>
     <true/>
-
-    <key>StandardErrorPath</key>
-    <string>/tmp/com.drivemapping.menubar.err</string>
 </dict>
 </plist>

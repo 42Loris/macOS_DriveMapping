@@ -93,9 +93,11 @@ mount_drive() {
     mountpoint="/Volumes/$label"
     # Strip smb: prefix → //server/share (format required by mount_smbfs)
     smb_path="${url#smb:}"
-    host="$(echo "$url" | sed 's|smb://||;s|/.*||')"
+    # host = everything between smb:// and the next /
+    host="${url#smb://}"
+    host="${host%%/*}"
 
-    if mount | grep -q "on $mountpoint "; then
+    if /sbin/mount | awk -v m="$mountpoint" '$3 == m { found = 1 } END { exit !found }'; then
         log "Already mounted: $label ($mountpoint)"
         return 0
     fi

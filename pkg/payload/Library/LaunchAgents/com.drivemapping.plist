@@ -22,9 +22,6 @@
         <string>/Library/Preferences/SystemConfiguration/NetworkInterfaces.plist</string>
     </array>
 
-    <key>StandardErrorPath</key>
-    <string>/tmp/com.drivemapping.err</string>
-
     <key>ThrottleInterval</key>
     <integer>10</integer>
 </dict>
