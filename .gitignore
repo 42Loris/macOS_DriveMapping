@@ -1,4 +1,5 @@
 .DS_Store
 pkg/build/
 pkg/payload/Applications/
+src/DriveMapping.app/
 src/menubar/.build/

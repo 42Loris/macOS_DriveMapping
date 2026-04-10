@@ -47,13 +47,15 @@ if [[ "$REBUILD" == true ]]; then
         codesign --force --options runtime --sign "$DEVELOPER_ID" "$APP_SOURCE"
     fi
 
-    echo "→ App rebuilt at src/$APP_NAME.app — commit it to the repo to update the baseline."
 fi
 
 echo "→ Copying .app into payload..."
 mkdir -p "$(dirname "$APP_BUNDLE")"
 rm -rf "$APP_BUNDLE"
 cp -R "$APP_SOURCE" "$APP_BUNDLE"
+
+echo "→ Cleaning up src..."
+rm -rf "$APP_SOURCE"
 
 echo "→ Building package with munkipkg..."
 munkipkg "$REPO_DIR/pkg/"
